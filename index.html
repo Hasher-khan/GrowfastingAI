@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="theme-color" content="#004ac6"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+  <title>growfasting | AI Email Generator & Grammar Checker</title>
+  <meta name="description" content="growfasting is a professional AI English writing assistant for students, job seekers, and business professionals to generate and refine emails."/>
+  <link rel="icon" type="image/png" href="logo.png"/>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-bright": "#f7f9fb",
+            "error": "#ba1a1a",
+            "primary-fixed": "#dbe1ff",
+            "inverse-on-surface": "#eff1f3",
+            "surface-container-low": "#f2f4f6",
+            "surface": "#f7f9fb",
+            "surface-container-lowest": "#ffffff",
+            "error-container": "#ffdad6",
+            "surface-container-highest": "#e0e3e5",
+            "on-primary-fixed-variant": "#003ea8",
+            "on-tertiary": "#ffffff",
+            "tertiary": "#943700",
+            "secondary": "#006591",
+            "primary": "#004ac6",
+            "on-secondary": "#ffffff",
+            "inverse-surface": "#2d3133",
+            "on-primary-container": "#eeefff",
+            "on-background": "#191c1e",
+            "surface-container-high": "#e6e8ea",
+            "on-surface-variant": "#434655",
+            "on-surface": "#191c1e",
+            "surface-container": "#eceef0",
+            "background": "#f7f9fb",
+            "primary-container": "#2563eb",
+            "outline": "#737686",
+            "on-primary": "#ffffff",
+            "outline-variant": "#c3c6d7",
+            "surface-dim": "#d8dadc"
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            headline: ['Plus Jakarta Sans', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Google Fonts & Material Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+
+  <!-- Firebase SDK (Compat - CDN) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics-compat.js"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-surface font-sans text-on-surface antialiased min-h-screen flex flex-col">
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- =====================================================
+       FIXED HEADER
+       ===================================================== -->
+  <header class="fixed top-0 w-full z-50 glass-nav border-b border-surface-container/60 shadow-sm">
+    <div class="header-inner">
+
+      <!-- Brand Logo -->
+      <a class="flex items-center gap-2 cursor-pointer group" data-path="landing" href="#">
+        <img src="logo.png" alt="growfasting.ai Logo" class="w-8 h-8 md:w-9 md:h-9 object-contain group-active:scale-95 transition-transform shrink-0"/>
+        <span class="font-headline font-extrabold text-lg md:text-xl tracking-tight text-on-surface">growfasting<span class="text-primary">.ai</span></span>
+      </a>
+
+      <!-- Desktop Navigation -->
+      <nav class="desktop-nav">
+        <a class="nav-link active" data-path="landing" href="#">Home</a>
+        <a class="nav-link" data-path="email-generator" href="#">Email Generator</a>
+        <a class="nav-link" data-path="grammar-checker" href="#">Grammar Checker</a>
+        <a class="nav-link" data-path="templates" href="#">Templates</a>
+        <a class="nav-link" data-path="dashboard" href="#">Dashboard</a>
+      </nav>
+
+      <!-- Right Controls -->
+      <div class="flex items-center gap-2">
+        <!-- AI Status Badge (desktop) -->
+        <button id="btn-open-settings" class="hidden lg:flex px-2.5 py-1.5 bg-surface-container hover:bg-surface-container-high text-on-surface-variant rounded-xl text-body-sm font-medium transition-colors items-center gap-1.5" title="AI Settings">
+          <span id="api-key-status-badge" class="flex items-center gap-1.5 text-xs font-semibold">
+            <span class="w-2 h-2 rounded-full bg-blue-500 inline-block"></span>
+            AI Engine
+          </span>
+          <span class="material-symbols-outlined text-[18px]">settings</span>
+        </button>
+
+        <!-- User Profile Bar (When Logged In) -->
+        <div id="user-profile-bar" class="hidden flex items-center gap-2">
+          <div class="flex items-center gap-2 bg-surface-container border border-outline-variant/60 rounded-xl px-2.5 py-1 text-xs font-semibold text-on-surface">
+            <div id="user-avatar-circle" class="w-6 h-6 rounded-full bg-primary text-on-primary font-bold flex items-center justify-center text-xs">U</div>
+            <span id="user-display-email" class="max-w-[100px] sm:max-w-[150px] truncate text-xs font-medium">user@example.com</span>
+          </div>
+          <button id="btn-sign-out" class="px-2.5 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors flex items-center gap-1 text-xs font-bold" title="Sign Out">
+            <span class="material-symbols-outlined text-[16px]">logout</span>
+            <span class="hidden sm:inline">Sign Out</span>
+          </button>
+        </div>
+
+        <!-- Sign In Button (When Logged Out) -->
+        <button id="btn-open-auth-modal" class="bg-primary text-on-primary hover:bg-primary-container px-3 py-1.5 rounded-xl text-xs md:text-sm font-semibold transition-all shadow-sm flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[18px]">account_circle</span>
+          <span>Sign In</span>
+        </button>
+
+        <!-- Mobile: Settings icon -->
+        <button id="btn-open-settings-mobile" class="flex md:hidden w-9 h-9 items-center justify-center rounded-xl bg-surface-container border border-outline-variant text-on-surface-variant" title="Settings">
+          <span class="material-symbols-outlined text-[20px]">settings</span>
+        </button>
+
+        <!-- Mobile: Hamburger Menu Button -->
+        <button id="btn-mobile-menu" aria-label="Open navigation menu">
+          <span class="material-symbols-outlined text-[22px]">menu</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Nav Overlay -->
+  <div id="mobile-nav-overlay"></div>
+
+  <!-- Mobile Slide-Down Nav Drawer -->
+  <div id="mobile-nav-drawer">
+    <div class="mobile-nav-links">
+      <button class="mobile-nav-link active" data-path="landing">
+        <span class="material-symbols-outlined">home</span>
+        <span>Home</span>
+      </button>
+      <button class="mobile-nav-link" data-path="email-generator">
+        <span class="material-symbols-outlined">mark_email_read</span>
+        <span>Email Generator</span>
+      </button>
+      <button class="mobile-nav-link" data-path="grammar-checker">
+        <span class="material-symbols-outlined">spellcheck</span>
+        <span>Grammar Checker</span>
+      </button>
+      <button class="mobile-nav-link" data-path="templates">
+        <span class="material-symbols-outlined">library_books</span>
+        <span>Templates</span>
+      </button>
+      <button class="mobile-nav-link" data-path="dashboard">
+        <span class="material-symbols-outlined">dashboard</span>
+        <span>Dashboard</span>
+      </button>
+
+      <!-- Mobile Status Badge Inside Drawer -->
+      <div class="mt-2 pt-3 border-t border-surface-container px-1">
+        <div id="mobile-ai-status" class="flex items-center gap-2 px-3 py-2 bg-emerald-50 rounded-xl">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse inline-block"></span>
+          <span class="text-xs font-semibold text-emerald-800">Real-Time AI Active</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       BOTTOM NAVIGATION BAR (Mobile Only)
+       ===================================================== -->
+  <nav id="bottom-nav" aria-label="Mobile navigation">
+    <button class="bottom-nav-item active" data-path="landing" id="bn-landing">
+      <div class="nav-icon-bg">
+        <span class="material-symbols-outlined">home</span>
+      </div>
+      <span>Home</span>
+    </button>
+    <button class="bottom-nav-item" data-path="email-generator" id="bn-email-generator">
+      <div class="nav-icon-bg">
+        <span class="material-symbols-outlined">mail</span>
+      </div>
+      <span>Email</span>
+    </button>
+    <button class="bottom-nav-item" data-path="grammar-checker" id="bn-grammar-checker">
+      <div class="nav-icon-bg">
+        <span class="material-symbols-outlined">spellcheck</span>
+      </div>
+      <span>Grammar</span>
+    </button>
+    <button class="bottom-nav-item" data-path="templates" id="bn-templates">
+      <div class="nav-icon-bg">
+        <span class="material-symbols-outlined">library_books</span>
+      </div>
+      <span>Templates</span>
+    </button>
+    <button class="bottom-nav-item" data-path="dashboard" id="bn-dashboard">
+      <div class="nav-icon-bg">
+        <span class="material-symbols-outlined">dashboard</span>
+      </div>
+      <span>Dashboard</span>
+    </button>
+  </nav>
+
+  <!-- =====================================================
+       MAIN CONTENT
+       ===================================================== -->
+  <main class="flex-grow">
+
+    <!-- ========================================================
+         VIEW 1: LANDING & LOGIN PAGE
+         ======================================================== -->
+    <section id="view-landing" class="view-section">
+      <!-- Split Hero Container -->
+      <div class="max-w-6xl mx-auto px-4 py-6 md:py-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+
+        <!-- LEFT COLUMN: Value Proposition & Hero Info -->
+        <div class="lg:col-span-7 flex flex-col items-start text-left space-y-5">
+          <!-- Badge -->
+          <div class="hero-badge bg-primary-fixed text-on-primary-fixed-variant border border-primary-container/20 px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[16px] text-primary">bolt</span>
+            AI Email Generator & Real-Time Grammar Engine
+          </div>
+
+          <!-- Title -->
+          <h1 class="font-headline font-extrabold text-3xl sm:text-4xl lg:text-5xl tracking-tight text-on-surface leading-[1.15]">
+            Write Flawless, High-Impact Emails in
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-600 to-sky-500"> Seconds.</span>
+          </h1>
+
+          <!-- Subtitle -->
+          <p class="text-on-surface-variant text-sm sm:text-base leading-relaxed max-w-xl">
+            <strong>growfasting.ai</strong> empowers job seekers, students, and professionals to craft persuasive emails, eliminate grammar mistakes, and securely store cloud history isolated per user UID.
+          </p>
+
+          <!-- Key Feature Bullets -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full pt-2">
+            <div class="flex items-start gap-2.5 p-3 rounded-2xl bg-surface-container-low border border-surface-container/60">
+              <span class="material-symbols-outlined text-primary text-[20px] shrink-0 mt-0.5">mark_email_read</span>
+              <div>
+                <h4 class="text-xs font-bold text-on-surface">Smart Email Generator</h4>
+                <p class="text-[11px] text-on-surface-variant">Tailored tones, custom prompts & factual accuracy.</p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-2.5 p-3 rounded-2xl bg-surface-container-low border border-surface-container/60">
+              <span class="material-symbols-outlined text-emerald-600 text-[20px] shrink-0 mt-0.5">spellcheck</span>
+              <div>
+                <h4 class="text-xs font-bold text-on-surface">Real-Time Grammar Checker</h4>
+                <p class="text-[11px] text-on-surface-variant">Auto-detects errors, tone & clarity live.</p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-2.5 p-3 rounded-2xl bg-surface-container-low border border-surface-container/60">
+              <span class="material-symbols-outlined text-blue-600 text-[20px] shrink-0 mt-0.5">cloud_done</span>
+              <div>
+                <h4 class="text-xs font-bold text-on-surface">Per-UID Cloud Storage</h4>
+                <p class="text-[11px] text-on-surface-variant">Firebase database secured strictly for your UID.</p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-2.5 p-3 rounded-2xl bg-surface-container-low border border-surface-container/60">
+              <span class="material-symbols-outlined text-purple-600 text-[20px] shrink-0 mt-0.5">verified</span>
+              <div>
+                <h4 class="text-xs font-bold text-on-surface">10+ Verified Templates</h4>
+                <p class="text-[11px] text-on-surface-variant">Career, sales, academic & customer support.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Stats Row -->
+          <div class="flex items-center gap-6 pt-3 text-xs text-on-surface-variant font-medium">
+            <div class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span>10K+ Emails Generated</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+              <span>Google Gemini AI</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+              <span>Firebase Secured</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: LANDING LOGIN / SIGN UP CARD -->
+        <div class="lg:col-span-5 w-full">
+          
+          <!-- LOGGED-OUT LOGIN CARD -->
+          <div id="landing-auth-card" class="bg-surface-lowest rounded-3xl border border-outline-variant/80 shadow-xl overflow-hidden p-6 space-y-4">
+            
+            <!-- Card Header -->
+            <div class="text-center pb-2 border-b border-surface-container">
+              <div class="w-12 h-12 mx-auto flex items-center justify-center mb-1">
+                <img src="logo.png" alt="growfasting.ai Logo" class="w-10 h-10 object-contain"/>
+              </div>
+              <h3 class="font-headline font-bold text-lg text-on-surface">Sign In to growfasting<span class="text-primary">.ai</span></h3>
+              <p class="text-xs text-on-surface-variant">Access your AI assistant & cloud-saved history</p>
+            </div>
+
+            <!-- Tab Switcher -->
+            <div class="flex border border-surface-container rounded-xl bg-surface-container-low p-1">
+              <button id="hero-tab-signin" class="flex-1 py-2 rounded-lg text-xs font-bold text-primary bg-surface-lowest shadow-sm transition-all flex items-center justify-center gap-1">
+                <span class="material-symbols-outlined text-[16px]">login</span>
+                Sign In
+              </button>
+              <button id="hero-tab-signup" class="flex-1 py-2 rounded-lg text-xs font-bold text-on-surface-variant hover:text-on-surface transition-all flex items-center justify-center gap-1">
+                <span class="material-symbols-outlined text-[16px]">person_add</span>
+                Create Account
+              </button>
+            </div>
+
+            <!-- Landing Auth Error Alert -->
+            <div id="hero-auth-error-msg" class="hidden p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-medium flex items-start gap-2">
+              <span class="material-symbols-outlined text-[18px] shrink-0 text-red-500">error</span>
+              <span id="hero-auth-error-text">Authentication error</span>
+            </div>
+
+            <!-- HERO FORM: SIGN IN -->
+            <form id="hero-form-signin" class="space-y-3">
+              <div>
+                <label class="block text-xs font-semibold text-on-surface-variant mb-1">Email Address</label>
+                <div class="relative">
+                  <span class="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant text-[18px]">mail</span>
+                  <input type="email" id="hero-signin-email" required placeholder="name@example.com" class="w-full pl-9 pr-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-on-surface-variant mb-1">Password</label>
+                <div class="relative">
+                  <span class="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant text-[18px]">key</span>
+                  <input type="password" id="hero-signin-password" required placeholder="••••••••" class="w-full pl-9 pr-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
+                </div>
+              </div>
+              <button type="submit" id="hero-btn-submit-signin" class="w-full py-2.5 bg-primary text-on-primary hover:bg-primary-container rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">lock_open</span>
+                Sign In to Workspace
+              </button>
+            </form>
+
+            <!-- HERO FORM: SIGN UP -->
+            <form id="hero-form-signup" class="hidden space-y-3">
+              <div>
+                <label class="block text-xs font-semibold text-on-surface-variant mb-1">Full Name</label>
+                <div class="relative">
+                  <span class="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant text-[18px]">person</span>
+                  <input type="text" id="hero-signup-name" required placeholder="John Doe" class="w-full pl-9 pr-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-on-surface-variant mb-1">Email Address</label>
+                <div class="relative">
+                  <span class="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant text-[18px]">mail</span>
+                  <input type="email" id="hero-signup-email" required placeholder="name@example.com" class="w-full pl-9 pr-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-on-surface-variant mb-1">Password (Min 6 chars)</label>
+                <div class="relative">
+                  <span class="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant text-[18px]">key</span>
+                  <input type="password" id="hero-signup-password" minlength="6" required placeholder="••••••••" class="w-full pl-9 pr-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
+                </div>
+              </div>
+              <button type="submit" id="hero-btn-submit-signup" class="w-full py-2.5 bg-primary text-on-primary hover:bg-primary-container rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">person_add</span>
+                Create Free Account
+              </button>
+            </form>
+
+            <div class="flex items-center gap-3 my-1">
+              <div class="flex-1 h-px bg-surface-container"></div>
+              <span class="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider">or</span>
+              <div class="flex-1 h-px bg-surface-container"></div>
+            </div>
+
+            <!-- GOOGLE SIGN IN BUTTON -->
+            <button id="hero-btn-google-auth" type="button" class="w-full py-2.5 bg-surface hover:bg-surface-container border border-outline-variant rounded-xl text-xs font-semibold text-on-surface transition-all flex items-center justify-center gap-2 shadow-sm">
+              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+              </svg>
+              Continue with Google
+            </button>
+
+          </div>
+
+          <!-- LOGGED-IN HERO CARD (WHEN AUTHENTICATED) -->
+          <div id="landing-user-card" class="hidden bg-surface-lowest rounded-3xl border border-emerald-200 shadow-xl overflow-hidden p-6 space-y-4 text-center">
+            <div class="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center mb-1">
+              <span class="material-symbols-outlined text-[32px]">verified_user</span>
+            </div>
+            <div>
+              <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold inline-block mb-2">
+                ✅ Firebase Authenticated
+              </span>
+              <h3 id="landing-user-welcome" class="font-headline font-extrabold text-xl text-on-surface">Welcome Back!</h3>
+              <p id="landing-user-email" class="text-xs text-on-surface-variant mt-1">user@example.com</p>
+            </div>
+
+            <div class="pt-2 space-y-2">
+              <button class="w-full py-3 bg-primary text-on-primary hover:bg-primary-container rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2" data-path="email-generator">
+                <span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+                Launch Email Generator
+              </button>
+              <button class="w-full py-2.5 bg-surface-container hover:bg-surface-container-high text-on-surface rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-2" data-path="grammar-checker">
+                <span class="material-symbols-outlined text-[18px]">spellcheck</span>
+                Open Grammar Checker
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================================
+         VIEW 2: EMAIL GENERATOR
+         ======================================================== -->
+    <section id="view-email-generator" class="view-section hidden">
+
+      <!-- Header -->
+      <div class="workspace-header">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="px-2.5 py-1 bg-primary-fixed text-on-primary-fixed-variant rounded-full text-label-sm font-bold uppercase tracking-wider">AI Workspace</span>
+          <span class="text-on-surface-variant text-label-sm hidden sm:inline">• EMAIL GENERATION</span>
+        </div>
+        <h1 class="text-headline-lg md:text-3xl font-headline font-bold text-on-surface">AI Email Generator</h1>
+        <p class="text-body-sm text-on-surface-variant mt-0.5 hidden sm:block">Specify your intent, recipient, and tone to draft ready-to-send emails.</p>
+      </div>
+
+      <!-- Mobile Tabs: Form / Preview -->
+      <div class="mobile-workspace-tabs mt-3 border-b border-surface-container">
+        <button class="workspace-tab active" id="tab-form">
+          <span class="material-symbols-outlined text-[18px]">edit</span>
+          <span>Compose</span>
+        </button>
+        <button class="workspace-tab" id="tab-preview">
+          <span class="material-symbols-outlined text-[18px]">mail</span>
+          <span>Preview</span>
+        </button>
+      </div>
+
+      <!-- 2-Column Desktop / Single-Column Mobile -->
+      <div class="workspace-grid">
+
+        <!-- Left: Input Form -->
+        <div class="workspace-panel-form" id="panel-form">
+          <div class="card">
+            <form id="email-generator-form" class="space-y-4">
+
+              <!-- Sender & Recipient Row -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="form-label">Your Name <span class="text-on-surface-variant font-normal">(Sender)</span></label>
+                  <input id="email-sender-name" type="text" placeholder="e.g. Hasher Khan" class="form-input"/>
+                </div>
+                <div>
+                  <label class="form-label">Recipient Name</label>
+                  <input id="email-recipient-name" type="text" placeholder="e.g. Mr. Johnson" class="form-input"/>
+                </div>
+              </div>
+
+              <!-- Purpose -->
+              <div>
+                <label class="form-label">Email Purpose / Topic <span class="text-red-500">*</span></label>
+                <input id="email-purpose" type="text" required placeholder="e.g. Follow up after interview, Request meeting" class="form-input"/>
+              </div>
+
+              <!-- Audience -->
+              <div>
+                <label class="form-label">Recipient Role / Company</label>
+                <input id="email-audience" type="text" placeholder="e.g. Hiring Manager, VP of Sales, Client" class="form-input"/>
+              </div>
+
+              <!-- Tone -->
+              <div>
+                <label class="form-label">Writing Tone</label>
+                <select id="email-tone-select" class="form-input mb-2">
+                  <option value="professional">Professional (Default)</option>
+                  <option value="formal">Formal</option>
+                  <option value="warm">Warm & Friendly</option>
+                  <option value="concise">Direct & Concise</option>
+                  <option value="persuasive">Persuasive</option>
+                  <option value="apologetic">Apologetic</option>
+                  <option value="confident">Confident</option>
+                  <option value="neutral">Neutral</option>
+                </select>
+                <!-- Quick Tone Pills -->
+                <div class="flex flex-wrap gap-1.5">
+                  <button type="button" class="tone-pill bg-primary text-on-primary border-primary" data-tone="professional">Professional</button>
+                  <button type="button" class="tone-pill bg-surface-container-low text-on-surface-variant hover:bg-surface-container" data-tone="warm">Warm</button>
+                  <button type="button" class="tone-pill bg-surface-container-low text-on-surface-variant hover:bg-surface-container" data-tone="concise">Concise</button>
+                  <button type="button" class="tone-pill bg-surface-container-low text-on-surface-variant hover:bg-surface-container" data-tone="persuasive">Persuasive</button>
+                  <button type="button" class="tone-pill bg-surface-container-low text-on-surface-variant hover:bg-surface-container" data-tone="formal">Formal</button>
+                </div>
+              </div>
+
+              <!-- Length -->
+              <div>
+                <label class="form-label">Email Length</label>
+                <input type="hidden" id="email-length-select" value="standard"/>
+                <div class="grid grid-cols-3 gap-2">
+                  <button type="button" class="length-btn" data-length="short">Short</button>
+                  <button type="button" class="length-btn bg-primary-container text-on-primary-container border-primary" data-length="standard">Standard</button>
+                  <button type="button" class="length-btn" data-length="detailed">Detailed</button>
+                </div>
+              </div>
+
+              <!-- Custom AI Prompt -->
+              <div>
+                <label class="form-label flex items-center justify-between">
+                  <span>Custom AI Prompt</span>
+                  <span class="text-label-sm text-primary font-semibold bg-primary-fixed px-2 py-0.5 rounded-full">⚡ Quick Generate</span>
+                </label>
+                <textarea id="email-custom-prompt" rows="3" placeholder="e.g. Highlight my 5 years experience, mention Marketing Manager role, propose a 15-minute call..." class="form-input resize-none" style="min-height:80px"></textarea>
+              </div>
+
+              <!-- Submit Button -->
+              <button id="btn-generate-email" type="submit" class="btn-generate">
+                <span class="material-symbols-outlined text-[20px]">auto_awesome</span>
+                Generate Email
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Right: Email Preview -->
+        <div class="workspace-panel-preview hidden-mobile" id="panel-preview">
+          <div class="card h-full flex flex-col" style="min-height: 480px;">
+
+            <!-- Placeholder -->
+            <div id="email-output-placeholder" class="flex flex-col items-center justify-center flex-grow text-center p-8">
+              <div class="w-16 h-16 rounded-2xl bg-surface-container flex items-center justify-center text-outline mb-4">
+                <span class="material-symbols-outlined text-[36px]">mail</span>
+              </div>
+              <h3 class="text-headline-sm font-semibold text-on-surface mb-2">Ready to draft your email</h3>
+              <p class="text-body-sm text-on-surface-variant max-w-xs">Fill in the details on the Compose tab, then tap <strong>Generate Email</strong>.</p>
+              <!-- Mobile hint -->
+              <button class="mt-4 flex md:hidden items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-xl text-label-md font-bold" id="btn-go-compose">
+                <span class="material-symbols-outlined text-[18px]">edit</span>
+                Go to Compose
+              </button>
+            </div>
+
+            <!-- Result -->
+            <div id="email-output-result" class="hidden flex flex-col gap-4 h-full">
+
+              <!-- Subject -->
+              <div class="bg-surface-container-low p-4 rounded-xl border border-surface-container">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-label-sm font-bold uppercase tracking-wider text-on-surface-variant">Subject Line</span>
+                  <button id="btn-copy-subject" class="text-primary text-label-sm font-semibold flex items-center gap-1 active:scale-95 transition-transform">
+                    <span class="material-symbols-outlined text-[16px]">content_copy</span> Copy
+                  </button>
+                </div>
+                <div id="output-email-subject" class="text-headline-sm font-bold text-on-surface select-all"></div>
+              </div>
+
+              <!-- Alt Subject Lines -->
+              <div>
+                <label class="block text-label-sm font-bold text-on-surface-variant uppercase tracking-wider mb-2">Alternative Subject Lines</label>
+                <div id="output-subject-alternatives" class="flex flex-col gap-1.5"></div>
+              </div>
+
+              <!-- Email Body -->
+              <div class="flex flex-col flex-grow">
+                <div class="flex items-center justify-between mb-2">
+                  <label class="text-label-sm font-bold uppercase tracking-wider text-on-surface-variant">Email Content</label>
+                  <div class="output-action-bar">
+                    <button id="btn-copy-email" class="btn-action-sm bg-surface-container text-on-surface hover:bg-surface-container-high">
+                      <span class="material-symbols-outlined text-[15px]">content_copy</span>
+                      <span class="hidden sm:inline">Copy Email</span>
+                      <span class="sm:hidden">Copy</span>
+                    </button>
+                    <button id="btn-send-to-grammar" class="btn-action-sm bg-primary-container text-on-primary-container hover:bg-primary hover:text-on-primary">
+                      <span class="material-symbols-outlined text-[15px]">spellcheck</span>
+                      <span class="hidden sm:inline">Refine Grammar</span>
+                      <span class="sm:hidden">Refine</span>
+                    </button>
+                  </div>
+                </div>
+                <div id="output-email-body" class="w-full flex-grow p-4 bg-surface border border-surface-container rounded-xl text-body-md text-on-surface whitespace-pre-wrap font-sans leading-relaxed select-all" style="min-height: 200px;"></div>
+              </div>
+
+              <!-- Notes -->
+              <div class="hidden bg-amber-50 border border-amber-200 p-3 rounded-xl">
+                <h4 class="text-label-md font-semibold text-amber-800 mb-1 flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-[18px]">warning</span> Factual Notes
+                </h4>
+                <ul id="output-email-notes" class="space-y-1"></ul>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================================
+         VIEW 3: GRAMMAR CHECKER
+         ======================================================== -->
+    <section id="view-grammar-checker" class="view-section hidden">
+
+      <!-- Header -->
+      <div class="workspace-header">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full text-label-sm font-bold uppercase tracking-wider">Linguistic Analysis</span>
+            </div>
+            <h1 class="text-headline-lg md:text-3xl font-headline font-bold text-on-surface">Grammar & Style</h1>
+            <p class="text-body-sm text-on-surface-variant mt-0.5 hidden sm:block">Real-time audit: spelling, grammar, clarity, and tone.</p>
+          </div>
+          <!-- Sample Pills (desktop only) -->
+          <div class="hidden sm:flex items-center gap-2 shrink-0">
+            <span class="text-body-sm text-on-surface-variant font-medium">Try:</span>
+            <button class="sample-text-pill px-3 py-1.5 bg-surface-container-high hover:bg-surface-dim text-on-surface rounded-lg text-label-sm font-semibold transition-colors">Business</button>
+            <button class="sample-text-pill px-3 py-1.5 bg-surface-container-high hover:bg-surface-dim text-on-surface rounded-lg text-label-sm font-semibold transition-colors">Cover Letter</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Workspace Grid -->
+      <div class="grammar-workspace-grid mt-3">
+
+        <!-- Left: Input Editor -->
+        <div class="card flex flex-col gap-3">
+          <div class="flex items-center justify-between pb-2 border-b border-surface-container">
+            <span class="text-label-md font-bold text-on-surface flex items-center gap-2">
+              <span class="material-symbols-outlined text-[20px] text-primary">edit_note</span> Your Text
+            </span>
+            <div class="flex items-center gap-3">
+              <!-- Auto-Check Toggle -->
+              <label class="flex items-center gap-2 cursor-pointer select-none" title="Auto-check while typing">
+                <span class="text-label-sm font-semibold text-on-surface-variant">Auto</span>
+                <div class="relative">
+                  <input type="checkbox" id="auto-check-toggle" class="sr-only peer"/>
+                  <div class="w-10 h-5 bg-surface-container-high rounded-full peer-checked:bg-primary transition-colors duration-200 peer-focus:ring-2 peer-focus:ring-primary/30"></div>
+                  <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 peer-checked:translate-x-5"></div>
+                </div>
+              </label>
+              <button id="btn-clear-grammar" class="text-label-sm text-on-surface-variant hover:text-red-600 font-semibold transition-colors">Clear</button>
+            </div>
+          </div>
+
+          <!-- Auto-check Status Bar -->
+          <div id="auto-check-status" class="hidden items-center gap-2 px-3 py-2 bg-primary-fixed rounded-xl text-label-sm font-semibold text-on-primary-fixed-variant">
+            <span class="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
+            <span id="auto-check-status-text">Analyzing your text...</span>
+          </div>
+
+          <div class="relative">
+            <textarea id="grammar-input-text" placeholder="Type or paste your text here. Turn on Auto to check grammar as you type..." class="form-input resize-none w-full" style="min-height: 200px; padding-bottom: 2rem;"></textarea>
+            <!-- Character Counter -->
+            <div class="absolute bottom-2 right-3 text-label-sm text-outline pointer-events-none">
+              <span id="grammar-char-count">0</span> chars
+            </div>
+          </div>
+
+          <button id="btn-check-grammar" class="btn-generate">
+            <span class="material-symbols-outlined text-[20px]">auto_fix_high</span>
+            Check Grammar & Tone
+          </button>
+        </div>
+
+        <!-- Right: Analysis Results -->
+        <div class="card flex flex-col" style="min-height: 300px;">
+
+          <!-- Placeholder -->
+          <div id="grammar-output-placeholder" class="flex flex-col items-center justify-center flex-grow text-center p-8">
+            <div class="w-14 h-14 rounded-2xl bg-surface-container flex items-center justify-center text-outline mb-4">
+              <span class="material-symbols-outlined text-[30px]">spellcheck</span>
+            </div>
+            <h3 class="text-headline-sm font-semibold text-on-surface mb-2">No analysis yet</h3>
+            <p class="text-body-sm text-on-surface-variant max-w-xs">Enter your text and tap <strong>Check Grammar & Tone</strong>.</p>
+          </div>
+
+          <!-- Results -->
+          <div id="grammar-output-result" class="hidden flex flex-col gap-4">
+
+            <!-- Summary -->
+            <div class="bg-surface-container-low p-4 rounded-xl border border-surface-container flex flex-col gap-2">
+              <div class="flex items-center justify-between flex-wrap gap-2">
+                <span class="text-label-sm font-bold uppercase tracking-wider text-on-surface-variant">Assessment</span>
+                <span id="tone-detected-badge" class="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-label-sm font-bold"></span>
+              </div>
+              <p id="grammar-summary-text" class="text-body-md font-semibold text-on-surface"></p>
+              <p id="tone-assessment-text" class="text-body-sm text-on-surface-variant"></p>
+            </div>
+
+            <!-- Full AI Corrected Text Container -->
+            <div id="corrected-text-container" class="hidden bg-emerald-50/80 border border-emerald-200 p-4 rounded-xl space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-[16px] text-emerald-600">auto_fix_high</span>
+                  Full AI Corrected Text
+                </span>
+                <button id="btn-copy-corrected" type="button" class="text-xs text-emerald-700 hover:text-emerald-900 font-bold flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[16px]">content_copy</span> Copy
+                </button>
+              </div>
+              <p id="corrected-text-preview" class="text-xs text-emerald-950 whitespace-pre-wrap font-medium leading-relaxed bg-white/80 p-3 rounded-lg border border-emerald-200/60"></p>
+              <button id="btn-replace-with-corrected" type="button" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5">
+                <span class="material-symbols-outlined text-[18px]">done_all</span>
+                Apply Full Auto-Correction to Editor
+              </button>
+            </div>
+
+            <!-- Filter Bar + Apply All -->
+            <div class="flex items-center justify-between gap-2">
+              <div class="suggestion-filter-row flex-grow">
+                <button class="grammar-filter-btn shrink-0 px-3 py-1.5 rounded-lg text-label-sm font-semibold bg-primary text-on-primary" data-category="all">All</button>
+                <button class="grammar-filter-btn shrink-0 px-3 py-1.5 rounded-lg text-label-sm font-semibold bg-surface-container-low text-on-surface-variant" data-category="grammar">Grammar</button>
+                <button class="grammar-filter-btn shrink-0 px-3 py-1.5 rounded-lg text-label-sm font-semibold bg-surface-container-low text-on-surface-variant" data-category="spelling">Spelling</button>
+                <button class="grammar-filter-btn shrink-0 px-3 py-1.5 rounded-lg text-label-sm font-semibold bg-surface-container-low text-on-surface-variant" data-category="clarity">Clarity</button>
+              </div>
+              <button id="btn-apply-all-suggestions" class="shrink-0 btn-action-sm bg-emerald-600 text-white hover:bg-emerald-700">
+                <span class="material-symbols-outlined text-[16px]">done_all</span>
+                <span class="hidden sm:inline">Apply All</span>
+              </button>
+            </div>
+
+            <!-- Suggestions -->
+            <div id="grammar-suggestions-list" class="flex flex-col gap-3 overflow-y-auto" style="max-height: 380px;"></div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         VIEW 4: TEMPLATES
+         ======================================================== -->
+    <section id="view-templates" class="view-section hidden">
+
+      <!-- Header -->
+      <div class="workspace-header">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="px-2.5 py-1 bg-purple-100 text-purple-800 rounded-full text-label-sm font-bold uppercase tracking-wider">Email Library</span>
+            </div>
+            <h1 class="text-headline-lg md:text-3xl font-headline font-bold text-on-surface">Email Templates</h1>
+            <p class="text-body-sm text-on-surface-variant mt-0.5 hidden sm:block">Pre-configured high-converting templates.</p>
+          </div>
+          <!-- Search -->
+          <div class="relative w-full sm:w-64">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
+            <input id="templates-search-input" type="text" placeholder="Search templates..." class="form-input pl-10"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Category Tabs -->
+      <div class="template-filter-bar mt-3">
+        <button class="template-category-btn shrink-0 px-4 py-2 rounded-xl text-label-md font-semibold bg-primary text-on-primary transition-colors" data-category="all">All</button>
+        <button class="template-category-btn shrink-0 px-4 py-2 rounded-xl text-label-md font-semibold bg-surface-container-lowest text-on-surface-variant border border-surface-container transition-colors" data-category="career">💼 Career</button>
+        <button class="template-category-btn shrink-0 px-4 py-2 rounded-xl text-label-md font-semibold bg-surface-container-lowest text-on-surface-variant border border-surface-container transition-colors" data-category="sales">🎯 Sales</button>
+        <button class="template-category-btn shrink-0 px-4 py-2 rounded-xl text-label-md font-semibold bg-surface-container-lowest text-on-surface-variant border border-surface-container transition-colors" data-category="networking">🤝 Network</button>
+        <button class="template-category-btn shrink-0 px-4 py-2 rounded-xl text-label-md font-semibold bg-surface-container-lowest text-on-surface-variant border border-surface-container transition-colors" data-category="support">💬 Support</button>
+        <button class="template-category-btn shrink-0 px-4 py-2 rounded-xl text-label-md font-semibold bg-surface-container-lowest text-on-surface-variant border border-surface-container transition-colors" data-category="academic">🎓 Academic</button>
+        <button class="template-category-btn shrink-0 px-4 py-2 rounded-xl text-label-md font-semibold bg-surface-container-lowest text-on-surface-variant border border-surface-container transition-colors" data-category="general">📋 General</button>
+      </div>
+
+      <!-- Grid -->
+      <div id="templates-grid-container" class="templates-grid"></div>
+
+    </section>
+
+    <!-- ========================================================
+         VIEW 5: DASHBOARD
+         ======================================================== -->
+    <section id="view-dashboard" class="view-section hidden">
+
+      <!-- Header -->
+      <div class="workspace-header">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-label-sm font-bold uppercase tracking-wider">Overview</span>
+        </div>
+        <h1 class="text-headline-lg md:text-3xl font-headline font-bold text-on-surface">Dashboard</h1>
+        <p class="text-body-sm text-on-surface-variant mt-0.5 hidden sm:block">Track your writing productivity and AI usage history.</p>
+      </div>
+
+      <!-- Stats Grid (2 col on mobile, 4 col on desktop) -->
+      <div class="stats-grid mt-3">
+        <div class="card flex items-center gap-3 p-4">
+          <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-[24px]">mark_email_read</span>
+          </div>
+          <div>
+            <p class="text-body-sm text-on-surface-variant font-medium">Emails</p>
+            <h3 id="dash-stat-emails" class="text-2xl font-headline font-extrabold text-on-surface leading-none">0</h3>
+          </div>
+        </div>
+
+        <div class="card flex items-center gap-3 p-4">
+          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-[24px]">spellcheck</span>
+          </div>
+          <div>
+            <p class="text-body-sm text-on-surface-variant font-medium">Checks</p>
+            <h3 id="dash-stat-grammar" class="text-2xl font-headline font-extrabold text-on-surface leading-none">0</h3>
+          </div>
+        </div>
+
+        <div class="card flex items-center gap-3 p-4">
+          <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-[24px]">description</span>
+          </div>
+          <div>
+            <p class="text-body-sm text-on-surface-variant font-medium">Words</p>
+            <h3 id="dash-stat-words" class="text-2xl font-headline font-extrabold text-on-surface leading-none">0</h3>
+          </div>
+        </div>
+
+        <div class="card flex items-center gap-3 p-4">
+          <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-[24px]">schedule</span>
+          </div>
+          <div>
+            <p class="text-body-sm text-on-surface-variant font-medium">Time Saved</p>
+            <h3 id="dash-stat-time" class="text-2xl font-headline font-extrabold text-on-surface leading-none">0m</h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- History -->
+      <div class="px-4 md:px-6 pb-6 mt-2">
+        <div class="card">
+          <div class="flex items-center justify-between pb-3 mb-3 border-b border-surface-container">
+            <h3 class="text-headline-sm font-bold text-on-surface flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary text-[22px]">history</span> Activity Log
+            </h3>
+            <span class="text-body-sm text-on-surface-variant">Saved locally</span>
+          </div>
+          <div id="dash-history-list" class="flex flex-col gap-3"></div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ========================================================
+         VIEW 6: ABOUT US
+         ======================================================== -->
+    <section id="view-about-us" class="view-section hidden max-w-4xl mx-auto px-4 py-8 space-y-8">
+      <div class="border-b border-surface-container pb-6 text-center">
+        <span class="px-3 py-1 bg-primary-fixed text-on-primary-fixed-variant rounded-full text-xs font-bold uppercase tracking-wider">Company & Mission</span>
+        <h1 class="font-headline font-extrabold text-3xl sm:text-4xl text-on-surface mt-3">About growfasting.ai</h1>
+        <p class="text-sm text-on-surface-variant max-w-xl mx-auto mt-2">Empowering students, job seekers, and business leaders to communicate with precision, confidence, and factual accuracy.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="card p-6 space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-100 text-primary flex items-center justify-center">
+            <span class="material-symbols-outlined text-[24px]">target</span>
+          </div>
+          <h3 class="font-headline font-bold text-lg text-on-surface">Our Core Mission</h3>
+          <p class="text-xs text-on-surface-variant leading-relaxed">
+            In a world flooded with generic AI spam, <strong>growfasting.ai</strong> was built to elevate human communication. We combine state-of-the-art Google Gemini AI models with strict system prompt guardrails to generate authentic, respectful, and persuasive emails.
+          </p>
+        </div>
+
+        <div class="card p-6 space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+            <span class="material-symbols-outlined text-[24px]">verified</span>
+          </div>
+          <h3 class="font-headline font-bold text-lg text-on-surface">Factual Guardrails Engine</h3>
+          <p class="text-xs text-on-surface-variant leading-relaxed">
+            Unlike standard AI chatbots that invent fake metrics or hallucinate attachments, our platform strictly adheres to zero-fact-invention rules. Every generated email uses clear placeholders for personal details, ensuring total truthfulness.
+          </p>
+        </div>
+
+        <div class="card p-6 space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
+            <span class="material-symbols-outlined text-[24px]">lock</span>
+          </div>
+          <h3 class="font-headline font-bold text-lg text-on-surface">Per-UID Data Privacy</h3>
+          <p class="text-xs text-on-surface-variant leading-relaxed">
+            Your data is yours alone. Powered by Firebase Authentication and Firestore security rules, your generated emails and history are encrypted and isolated strictly to your unique User ID (UID). No other user can ever access your data.
+          </p>
+        </div>
+
+        <div class="card p-6 space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+            <span class="material-symbols-outlined text-[24px]">bolt</span>
+          </div>
+          <h3 class="font-headline font-bold text-lg text-on-surface">Real-Time Linguistic Audit</h3>
+          <p class="text-xs text-on-surface-variant leading-relaxed">
+            Our real-time Grammar Checker audits spelling, syntax, clarity, and tone in under 2 seconds. Enjoy 1-click full auto-corrections so your writing always shines before you click send.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         VIEW 7: TERMS OF SERVICE
+         ======================================================== -->
+    <section id="view-terms" class="view-section hidden max-w-4xl mx-auto px-4 py-8 space-y-6">
+      <div class="border-b border-surface-container pb-4">
+        <span class="px-3 py-1 bg-surface-container-high text-on-surface-variant rounded-full text-xs font-bold uppercase tracking-wider">Legal Terms</span>
+        <h1 class="font-headline font-extrabold text-3xl text-on-surface mt-2">Terms of Service</h1>
+        <p class="text-xs text-on-surface-variant mt-1">Effective Date: September 12, 2026</p>
+      </div>
+
+      <div class="card p-6 space-y-6 text-xs text-on-surface-variant leading-relaxed">
+        <section class="space-y-2">
+          <h3 class="font-headline font-bold text-sm text-on-surface">1. Acceptance of Terms</h3>
+          <p>By accessing or using <strong>growfasting.ai</strong> ("Service"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our Service.</p>
+        </section>
+
+        <section class="space-y-2">
+          <h3 class="font-headline font-bold text-sm text-on-surface">2. User Accounts & UID Data Isolation</h3>
+          <p>To use our workspace features, you must register an account using Firebase Authentication. You are responsible for safeguarding your password and account credentials. Each user account is assigned a unique User ID (UID), and data stored in Firestore is isolated strictly to your account.</p>
+        </section>
+
+        <section class="space-y-2">
+          <h3 class="font-headline font-bold text-sm text-on-surface">3. Acceptable Use Policy</h3>
+          <p>You agree not to use growfasting.ai to generate, send, or distribute spam, fraudulent emails, phishing attempts, harassment, defamatory material, or unlawful content. Violation of acceptable use rules may result in immediate suspension or termination of your account.</p>
+        </section>
+
+        <section class="space-y-2">
+          <h3 class="font-headline font-bold text-sm text-on-surface">4. AI Output Responsibility</h3>
+          <p>Our platform utilizes artificial intelligence (Google Gemini API) to generate email drafts and refine grammar. While our system prompt enforces factual accuracy guardrails, you are solely responsible for reviewing, verifying, and editing all AI-generated content before sending it to third parties.</p>
+        </section>
+
+        <section class="space-y-2">
+          <h3 class="font-headline font-bold text-sm text-on-surface">5. Intellectual Property</h3>
+          <p>You retain full ownership of the text inputs you provide and the final email outputs you generate. growfasting.ai retains all intellectual property rights in the software platform, design, branding, and underlying prompt architecture.</p>
+        </section>
+
+        <section class="space-y-2">
+          <h3 class="font-headline font-bold text-sm text-on-surface">6. Limitation of Liability</h3>
+          <p>In no event shall growfasting.ai, its operators, or API providers be liable for any indirect, incidental, consequential, or punitive damages resulting from your use of or inability to use the Service.</p>
+        </section>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         VIEW 8: PRIVACY POLICY
+         ======================================================== -->
+    <section id="view-privacy" class="view-section hidden max-w-4xl mx-auto px-4 py-8 space-y-6">
+      <div class="border-b border-surface-container pb-4">
+        <span class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold uppercase tracking-wider">Data Protection</span>
+        <h1 class="font-headline font-extrabold text-3xl text-on-surface mt-2">Privacy Policy</h1>
+        <p class="text-xs text-on-surface-variant mt-1">Effective Date: September 12, 2026</p>
+      </div>
+
+      <div class="card p-6 space-y-6 text-xs text-on-surface-variant leading-relaxed">
+        <section class="space-y-2">
+          <h3 class="font-headline font-bold text-sm text-on-surface">1. Information We Collect</h3>
+          <p>We collect information necessary to provide our service, including:</p>
+          <ul class="list-disc pl-5 space-y-1">
+            <li><strong>Account Information:</strong> Email address, display name, and authentication details supplied via Firebase Auth or Google Sign-In.</li>
+            <li><strong>User Content:</strong> Input parameters, generated email history, and grammar check logs stored under your User ID (UID).</li>
+            <li><strong>Usage Telemetry:</strong> Anonymized event logs via Firebase Analytics (`G-YVT4WPY4KP`) to improve application performance.</li>
+          </ul>
+        </section>
+
+        <section class="space-y-2">
+          <h3 class="font-headline font-bold text-sm text-on-surface">2. How We Store & Protect Your Data</h3>
+          <p>We prioritize security. Your account data is stored securely in Google Cloud Firebase infrastructure. Firestore security rules strictly restrict read and write access to your document path (`users/{user.uid}`), preventing unauthorized access by third parties or other users.</p>
+        </section>
+
+        <section class="space-y-2">
+          <h3 class="font-headline font-bold text-sm text-on-surface">3. AI Processing & API Privacy</h3>
+          <p>Text sent for email generation or grammar checking is processed securely via Google Gemini API requests originating from our backend server. Your API requests are NOT used to train public AI foundation models.</p>
+        </section>
+
+        <section class="space-y-2">
+          <h3 class="font-headline font-bold text-sm text-on-surface">4. User Rights (GDPR & CCPA)</h3>
+          <p>You have the right to access, export, or permanently delete your user history data at any time from your Dashboard or by deleting your account.</p>
+        </section>
+
+        <section class="space-y-2">
+          <h3 class="font-headline font-bold text-sm text-on-surface">5. Contact Information</h3>
+          <p>If you have questions regarding this Privacy Policy, please contact our privacy compliance team at <strong>privacy@growfasting.ai</strong>.</p>
+        </section>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         VIEW 9: COOKIE POLICY
+         ======================================================== -->
+    <section id="view-cookie-policy" class="view-section hidden max-w-4xl mx-auto px-4 py-8 space-y-6">
+      <div class="border-b border-surface-container pb-4">
+        <span class="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-bold uppercase tracking-wider">Cookies & Storage</span>
+        <h1 class="font-headline font-extrabold text-3xl text-on-surface mt-2">Cookie Policy</h1>
+        <p class="text-xs text-on-surface-variant mt-1">Effective Date: September 12, 2026</p>
+      </div>
+
+      <div class="card p-6 space-y-6 text-xs text-on-surface-variant leading-relaxed">
+        <section class="space-y-2">
+          <h3 class="font-headline font-bold text-sm text-on-surface">1. What Are Cookies</h3>
+          <p>Cookies and local web storage are small text files or data structures stored on your device when you visit websites. They help the application recognize your session, remember preferences, and maintain security.</p>
+        </section>
+
+        <section class="space-y-2">
+          <h3 class="font-headline font-bold text-sm text-on-surface">2. Essential Cookies & Web Storage We Use</h3>
+          <ul class="list-disc pl-5 space-y-2">
+            <li><strong>Firebase Auth Token:</strong> Essential session token stored securely to maintain your login status across app navigation.</li>
+            <li><strong>Local History Cache (`gf_history`):</strong> Temporary browser storage used to render quick local history lists.</li>
+          </ul>
+        </section>
+
+        <section class="space-y-2">
+          <h3 class="font-headline font-bold text-sm text-on-surface">3. Analytics Cookies</h3>
+          <p>We use Firebase Analytics (`G-YVT4WPY4KP`) to aggregate anonymous usage statistics such as page views and feature engagement. This data helps us optimize server performance and user experience.</p>
+        </section>
+
+        <section class="space-y-2">
+          <h3 class="font-headline font-bold text-sm text-on-surface">4. Managing Your Cookies</h3>
+          <p>You can choose to block or delete cookies through your web browser settings. However, disabling essential authentication cookies will prevent you from logging into your growfasting.ai workspace.</p>
+        </section>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         VIEW 10: EARNINGS & AI DISCLAIMER
+         ======================================================== -->
+    <section id="view-disclaimer" class="view-section hidden max-w-4xl mx-auto px-4 py-8 space-y-6">
+      <div class="border-b border-surface-container pb-4">
+        <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-bold uppercase tracking-wider">Important Notice</span>
+        <h1 class="font-headline font-extrabold text-3xl text-on-surface mt-2">Earnings & Performance Disclaimer</h1>
+        <p class="text-xs text-on-surface-variant mt-1">Effective Date: September 12, 2026</p>
+      </div>
+
+      <div class="card p-6 space-y-6 text-xs text-on-surface-variant leading-relaxed">
+        <section class="space-y-2">
+          <h3 class="font-headline font-bold text-sm text-on-surface">1. No Financial or Income Guarantees</h3>
+          <p><strong>growfasting.ai</strong> is an AI-powered communication software tool designed to assist in email composition and grammar refinement. Any examples, templates, or references to sales outreach, salary negotiations, or business follow-ups are strictly for illustrative purposes and do NOT constitute a guarantee of income, sales conversion, or financial outcome.</p>
+        </section>
+
+        <section class="space-y-2">
+          <h3 class="font-headline font-bold text-sm text-on-surface">2. AI Output Verification Disclaimer</h3>
+          <p>Artificial intelligence language models generate suggestions based on pattern recognition. While growfasting.ai implements system prompt factual guardrails, we do not warrant that generated text is 100% free of errors or appropriate for every scenario. Users must independently review and verify all output before relying on it for professional, legal, or commercial communication.</p>
+        </section>
+
+        <section class="space-y-2">
+          <h3 class="font-headline font-bold text-sm text-on-surface">3. Individual Results Will Vary</h3>
+          <p>Career success, job offer acceptances, sales closing rates, and academic outcomes depend on individual qualifications, market conditions, and personal effort beyond the scope of any writing software.</p>
+        </section>
+
+        <section class="space-y-2">
+          <h3 class="font-headline font-bold text-sm text-on-surface">4. Limitation of Warranties</h3>
+          <p>The Service is provided on an "AS IS" and "AS AVAILABLE" basis without warranties of any kind, express or implied, including warranties of merchantability, fitness for a particular purpose, or non-infringement.</p>
+        </section>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- =====================================================
+       SETTINGS MODAL (Bottom Sheet on Mobile)
+       ===================================================== -->
+  <div id="settings-modal" class="modal-backdrop hidden" style="display:none;">
+    <div class="modal-panel">
+      <div class="modal-handle"></div>
+
+      <div class="flex items-center justify-between border-b border-surface-container pb-3 mb-4">
+        <h3 class="text-headline-sm font-bold text-on-surface flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary">tune</span> AI Engine Settings
+        </h3>
+        <button id="btn-close-settings" class="w-9 h-9 flex items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container transition-colors">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+
+      <div class="space-y-4 mb-6">
+        <p class="text-body-sm text-on-surface-variant leading-relaxed">
+          <strong>growfasting</strong> uses a secure backend AI engine powered by Google Gemini. Your key is configured on the server, never exposed to the browser.
+        </p>
+
+        <div id="settings-ai-status" class="flex items-center gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+          <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse inline-block shrink-0"></span>
+          <div>
+            <p class="text-label-md font-bold text-emerald-800">Real-Time AI Active</p>
+            <p class="text-body-sm text-emerald-700">Backend Gemini AI engine is connected and operational.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-3 border-t border-surface-container">
+        <button id="btn-save-settings" class="px-5 py-2.5 bg-primary text-on-primary rounded-xl text-label-md font-bold transition-colors hover:bg-primary-container">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       FIREBASE AUTHENTICATION MODAL (REQUIRED FOR WORKSPACE)
+       ===================================================== -->
+  <div id="auth-modal-overlay" class="hidden fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 transition-all">
+    <div class="bg-surface-lowest rounded-3xl border border-outline-variant/80 shadow-2xl max-w-md w-full overflow-hidden flex flex-col transition-all transform scale-100">
+      
+      <!-- Modal Header -->
+      <div class="bg-gradient-to-r from-primary to-primary-container p-6 text-on-primary text-center relative">
+        <button id="btn-close-auth-modal" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+        <div class="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md mx-auto flex items-center justify-center mb-3 shadow-sm">
+          <img src="logo.png" alt="growfasting.ai Logo" class="w-10 h-10 object-contain"/>
+        </div>
+        <h2 class="font-headline font-extrabold text-2xl tracking-tight">growfasting<span class="text-blue-200">.ai</span></h2>
+        <p class="text-xs text-blue-100 mt-1 font-medium">Sign in to save emails & history isolated to your UID</p>
+      </div>
+
+      <!-- Auth Tabs: Sign In / Sign Up -->
+      <div class="flex border-b border-surface-container bg-surface-container-low p-1.5">
+        <button id="tab-btn-signin" class="flex-1 py-2.5 rounded-xl text-xs font-bold text-primary bg-surface-lowest shadow-sm transition-all flex items-center justify-center gap-1.5">
+          <span class="material-symbols-outlined text-[18px]">login</span>
+          Sign In
+        </button>
+        <button id="tab-btn-signup" class="flex-1 py-2.5 rounded-xl text-xs font-bold text-on-surface-variant hover:text-on-surface transition-all flex items-center justify-center gap-1.5">
+          <span class="material-symbols-outlined text-[18px]">person_add</span>
+          Create Account
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        
+        <!-- Error Alert Message -->
+        <div id="auth-error-msg" class="hidden p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-medium flex items-start gap-2">
+          <span class="material-symbols-outlined text-[18px] shrink-0 text-red-500">error</span>
+          <span id="auth-error-text">Authentication failed. Please check credentials.</span>
+        </div>
+
+        <!-- FORM: SIGN IN -->
+        <form id="form-signin" class="space-y-3.5">
+          <div>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1">Email Address</label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant text-[18px]">mail</span>
+              <input type="email" id="signin-email" required placeholder="name@example.com" class="w-full pl-9 pr-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1">Password</label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant text-[18px]">key</span>
+              <input type="password" id="signin-password" required placeholder="••••••••" class="w-full pl-9 pr-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
+            </div>
+          </div>
+          <button type="submit" id="btn-submit-signin" class="w-full py-2.5 bg-primary text-on-primary hover:bg-primary-container rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined text-[18px]">lock_open</span>
+            Sign In to Workspace
+          </button>
+        </form>
+
+        <!-- FORM: SIGN UP -->
+        <form id="form-signup" class="hidden space-y-3.5">
+          <div>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1">Full Name</label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant text-[18px]">person</span>
+              <input type="text" id="signup-name" required placeholder="John Doe" class="w-full pl-9 pr-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1">Email Address</label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant text-[18px]">mail</span>
+              <input type="email" id="signup-email" required placeholder="name@example.com" class="w-full pl-9 pr-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1">Password (Min 6 characters)</label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant text-[18px]">key</span>
+              <input type="password" id="signup-password" minlength="6" required placeholder="••••••••" class="w-full pl-9 pr-3 py-2 bg-surface border border-outline-variant rounded-xl text-xs text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
+            </div>
+          </div>
+          <button type="submit" id="btn-submit-signup" class="w-full py-2.5 bg-primary text-on-primary hover:bg-primary-container rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined text-[18px]">person_add</span>
+            Create Free Account
+          </button>
+        </form>
+
+        <div class="flex items-center gap-3 my-2">
+          <div class="flex-1 h-px bg-surface-container"></div>
+          <span class="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">or</span>
+          <div class="flex-1 h-px bg-surface-container"></div>
+        </div>
+
+        <!-- GOOGLE SIGN IN BUTTON -->
+        <button id="btn-google-auth" type="button" class="w-full py-2.5 bg-surface hover:bg-surface-container border border-outline-variant rounded-xl text-xs font-semibold text-on-surface transition-all flex items-center justify-center gap-2.5 shadow-sm">
+          <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          Continue with Google
+        </button>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       FOOTER (PROFESSIONAL MULTI-COLUMN)
+       ===================================================== -->
+  <footer class="bg-surface-container-lowest border-t border-surface-container py-10 mt-auto">
+    <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-12 gap-8 text-on-surface-variant">
+      
+      <!-- Brand Info (Col 5) -->
+      <div class="md:col-span-5 space-y-3">
+        <div class="flex items-center gap-2">
+          <img src="logo.png" alt="growfasting.ai Logo" class="w-8 h-8 object-contain shrink-0"/>
+          <span class="font-headline font-extrabold text-lg tracking-tight text-on-surface">growfasting<span class="text-primary">.ai</span></span>
+        </div>
+        <p class="text-xs leading-relaxed max-w-sm text-on-surface-variant">
+          Professional AI Writing Assistant grounded in system prompt rules for factual accuracy, respectful tone, and 100% per-UID data privacy.
+        </p>
+        <div class="flex items-center gap-2 text-xs text-emerald-700 font-semibold pt-1">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Firebase Secured & Gemini AI Powered</span>
+        </div>
+      </div>
+
+      <!-- Quick Navigation (Col 3) -->
+      <div class="md:col-span-3 space-y-2.5">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-on-surface">Navigation</h4>
+        <ul class="space-y-2 text-xs font-medium">
+          <li><a href="#" data-path="landing" class="hover:text-primary transition-colors">Home</a></li>
+          <li><a href="#" data-path="email-generator" class="hover:text-primary transition-colors">AI Email Generator</a></li>
+          <li><a href="#" data-path="grammar-checker" class="hover:text-primary transition-colors">Grammar & Tone Checker</a></li>
+          <li><a href="#" data-path="templates" class="hover:text-primary transition-colors">Email Templates</a></li>
+          <li><a href="#" data-path="dashboard" class="hover:text-primary transition-colors">User Dashboard</a></li>
+        </ul>
+      </div>
+
+      <!-- Legal & Compliance (Col 4) -->
+      <div class="md:col-span-4 space-y-2.5">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-on-surface">Legal & Governance</h4>
+        <ul class="space-y-2 text-xs font-medium">
+          <li><a href="#" data-path="about-us" class="hover:text-primary transition-colors flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px] text-primary">info</span> About Us</a></li>
+          <li><a href="#" data-path="terms" class="hover:text-primary transition-colors flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px] text-slate-500">gavel</span> Terms of Service</a></li>
+          <li><a href="#" data-path="privacy" class="hover:text-primary transition-colors flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px] text-emerald-600">shield</span> Privacy Policy</a></li>
+          <li><a href="#" data-path="cookie-policy" class="hover:text-primary transition-colors flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px] text-amber-600">cookie</span> Cookie Policy</a></li>
+          <li><a href="#" data-path="disclaimer" class="hover:text-primary transition-colors flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px] text-red-500">warning</span> Earnings Disclaimer</a></li>
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="max-w-7xl mx-auto px-6 mt-8 pt-6 border-t border-surface-container flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-on-surface-variant">
+      <p>© 2026 growfasting.ai. All rights reserved.</p>
+      <p class="text-[11px]">Designed for high-impact communication with zero invented facts.</p>
+    </div>
+  </footer>
+
+  <!-- Firebase Config + Analytics -->
+  <script src="firebase-config.js"></script>
+  <!-- Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
