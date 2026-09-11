@@ -1,11 +1,12 @@
 {
+  "outputDirectory": ".",
   "rewrites": [
     {
       "source": "/api/(.*)",
       "destination": "/api/index.js"
     },
     {
-      "source": "/((?!.*\\.(?:css|js|png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf|eot|json|txt|xml|map)$).*)",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ]
