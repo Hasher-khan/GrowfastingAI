@@ -217,5 +217,11 @@ function startServer(port) {
   });
 }
 
-startServer(PORT);
+// Export app for Vercel Serverless Function deployment
+module.exports = app;
+
+// Run standalone server when executing locally
+if (!process.env.VERCEL) {
+  startServer(PORT);
+}
 
