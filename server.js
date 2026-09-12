@@ -27,12 +27,10 @@ async function callGeminiApi(systemInstructions, userPrompt) {
     throw new Error('No API key found in server .env file.');
   }
 
-  // Model fallback list - stable Gemini models (v1beta compatible)
   const models = [
-    'gemini-2.0-flash',           // Most stable & fast
-    'gemini-2.0-flash-lite',      // Lightweight fallback
-    'gemini-1.5-flash',           // Reliable fallback
-    'gemini-1.5-flash-8b',        // Smallest, most available
+    'gemini-1.5-flash',
+    'gemini-1.5-pro',
+    'gemini-1.0-pro'
   ];
   let lastError = null;
 
