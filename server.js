@@ -27,8 +27,8 @@ async function callGeminiApi(systemInstructions, userPrompt) {
     throw new Error('No API key found in server .env file.');
   }
 
-  // Model fallback list with gemini-3.6-flash prioritized
-  const models = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.7-flash', 'gemini-flash-latest', 'gemini-pro-latest'];
+  // Model fallback list - valid Google Gemini model IDs
+  const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
   let lastError = null;
 
   for (const model of models) {
