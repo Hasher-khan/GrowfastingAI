@@ -1306,7 +1306,6 @@ async function deleteHistoryItem(idx) {
    ===================================================== */
 function initAuthUI() {
   const authModalOverlay = document.getElementById('auth-modal-overlay');
-  const btnOpenAuth = document.getElementById('btn-open-auth-modal');
   const btnCloseAuth = document.getElementById('btn-close-auth-modal');
   const btnSignOut = document.getElementById('btn-sign-out');
 
@@ -1358,7 +1357,6 @@ function initAuthUI() {
     if (authModalOverlay) authModalOverlay.classList.add('hidden');
   }
 
-  if (btnOpenAuth) btnOpenAuth.addEventListener('click', openAuthModal);
   if (btnCloseAuth) btnCloseAuth.addEventListener('click', closeAuthModal);
 
   // Tab switching for Modal
@@ -1528,7 +1526,6 @@ function initAuthUI() {
 
       if (user) {
         state.currentUser = user;
-        if (btnOpenAuth) btnOpenAuth.classList.add('hidden');
         if (userBar) userBar.classList.remove('hidden');
         if (authModalOverlay) authModalOverlay.classList.add('hidden');
 
@@ -1555,7 +1552,6 @@ function initAuthUI() {
 
       } else {
         state.currentUser = null;
-        if (btnOpenAuth) btnOpenAuth.classList.remove('hidden');
         if (userBar) userBar.classList.add('hidden');
 
         // Hero Cards state switch
